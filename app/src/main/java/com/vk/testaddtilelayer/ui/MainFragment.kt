@@ -10,11 +10,18 @@ import com.vk.testaddtilelayer.databinding.FragmentMainBinding
 import com.yandex.mapkit.MapKit
 import com.yandex.mapkit.MapKitFactory
 import com.yandex.mapkit.geometry.Point
+import com.yandex.mapkit.images.DefaultImageUrlProvider
+import com.yandex.mapkit.layers.Layer
+import com.yandex.mapkit.layers.LayerOptions
 import com.yandex.mapkit.layers.ObjectEvent
+import com.yandex.mapkit.layers.TileFormat
 import com.yandex.mapkit.map.CameraPosition
+import com.yandex.mapkit.map.CreateTileDataSource
 import com.yandex.mapkit.map.InputListener
 import com.yandex.mapkit.map.Map
+import com.yandex.mapkit.map.MapType
 import com.yandex.mapkit.mapview.MapView
+import com.yandex.mapkit.tiles.UrlProvider
 import com.yandex.mapkit.user_location.UserLocationLayer
 import com.yandex.mapkit.user_location.UserLocationObjectListener
 import com.yandex.mapkit.user_location.UserLocationView
@@ -23,6 +30,9 @@ import com.yandex.mapkit.user_location.UserLocationView
 class MainFragment : Fragment() {
     private var _binding: FragmentMainBinding? = null
     private val binding get() = _binding!!
+    private lateinit var newLayer: Layer
+    private lateinit var urlTileProvider: UrlProvider
+    private var imageUrlProvider: DefaultImageUrlProvider? = null
 
     private var mapView: MapView? = null
     private lateinit var userLocation: UserLocationLayer
@@ -50,7 +60,29 @@ class MainFragment : Fragment() {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         val view = binding.root
         getMyLocation()
-        tup()
+
+
+        //попробуйте переключить osm-yandex-osm и получите ошибку
+        binding.osm.setOnClickListener {
+            urlTileProvider = UrlProvider { tileId, _, _ ->
+                "https://a.tile.openstreetmap.fr/hot/" + tileId.z + "/" + tileId.x + "/" + tileId.y + ".png"
+            }
+
+            binding.mapView.mapWindow.map.mapType = MapType.NONE
+            imageUrlProvider = DefaultImageUrlProvider();
+            newLayer = binding.mapView.mapWindow.map.addTileLayer(
+                "Test",
+                LayerOptions().setVersionSupport(false),
+                CreateTileDataSource { tileDataSourceBuilder ->
+                    tileDataSourceBuilder.setTileFormat(TileFormat.PNG)
+                    tileDataSourceBuilder.setTileUrlProvider(urlTileProvider)
+                })
+        }
+
+        binding.yandex.setOnClickListener {
+            newLayer.dataSourceLayer().isActive = false
+            binding.mapView.mapWindow.map.mapType = MapType.MAP
+        }
 
 
 
@@ -58,21 +90,7 @@ class MainFragment : Fragment() {
         return view
     }
 
-    private fun tup() {
-        val inputListener = object : InputListener {
-            override fun onMapTap(map: Map, point: Point) {
-                Toast.makeText(requireContext(), "Короткое нажатие на экран", Toast.LENGTH_SHORT)
-                    .show()
-            }
 
-            override fun onMapLongTap(map: Map, point: Point) {
-                Toast.makeText(requireContext(), "Долгое нажатие на экран", Toast.LENGTH_SHORT)
-                    .show()
-            }
-        }
-        binding.mapView.map.addInputListener(inputListener)
-
-    }
 
 
     private fun getMyLocation() {
