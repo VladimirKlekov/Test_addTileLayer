@@ -60,23 +60,23 @@ class MainFragment : Fragment() {
         _binding = FragmentMainBinding.inflate(inflater, container, false)
         val view = binding.root
         getMyLocation()
+        imageUrlProvider = DefaultImageUrlProvider();
+        urlTileProvider = UrlProvider { tileId, _, _ ->
+            "https://core-sat.maps.yandex.net/tiles?l=sat&x=5004&y=2421&z=13&scale=1&lang=ru_RU" + tileId.z + "/" + tileId.x + "/" + tileId.y + ".jpg"
+        }
+
+        newLayer = binding.mapView.mapWindow.map.addTileLayer(
+            "Test",
+            LayerOptions().setVersionSupport(false),
+            CreateTileDataSource { tileDataSourceBuilder ->
+                tileDataSourceBuilder.setTileFormat(TileFormat.JPG)
+                tileDataSourceBuilder.setTileUrlProvider(urlTileProvider)
+            })
 
 
-        //попробуйте переключить osm-yandex-osm и получите ошибку
         binding.osm.setOnClickListener {
-            urlTileProvider = UrlProvider { tileId, _, _ ->
-                "https://a.tile.openstreetmap.fr/hot/" + tileId.z + "/" + tileId.x + "/" + tileId.y + ".png"
-            }
-
             binding.mapView.mapWindow.map.mapType = MapType.NONE
-            imageUrlProvider = DefaultImageUrlProvider();
-            newLayer = binding.mapView.mapWindow.map.addTileLayer(
-                "Test",
-                LayerOptions().setVersionSupport(false),
-                CreateTileDataSource { tileDataSourceBuilder ->
-                    tileDataSourceBuilder.setTileFormat(TileFormat.PNG)
-                    tileDataSourceBuilder.setTileUrlProvider(urlTileProvider)
-                })
+            newLayer.dataSourceLayer().isActive = true
         }
 
         binding.yandex.setOnClickListener {
